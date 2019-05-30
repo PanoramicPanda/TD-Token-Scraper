@@ -6,7 +6,7 @@ require 'json'
 test = Token.new
 
 test.name = 'Gauntlets of Ogre Power'
-test.link = 'http:\/\/tokendb.com\/token\/gauntlets-of-ogre-power\/'
+test.link = 'http://tokendb.com/token/gauntlets-of-ogre-power/'
 classes = ['all', 'Barbarian', 'Bard', 'Cleric', 'Druid', 'Dwarf Fighter', 'Elf Wizard', 'Fighter', 'Monk', 'Paladin', 'Ranger', 'Rogue', 'Wizard']
 classes.each{ |td_class| test.add_class(td_class) }
 test.rarity = 'Rare'
