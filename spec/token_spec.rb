@@ -1,4 +1,4 @@
-require_relative '../token.rb'
+require_relative '../helpers/token.rb'
 
 describe Token do
   token = Token.new
@@ -112,7 +112,7 @@ describe Token do
       test_hash = {
           link: 'http://tokendb.com/token/gauntlets-of-ogre-power/',
           image: token.image_guid,
-          classes: ['Barbarian', 'Bard'],
+          helpers: ['Barbarian', 'Bard'],
           rarity: 'Rare',
           slot: 'Hands',
           years: ['2012', '2016'],
