@@ -1,4 +1,11 @@
-require 'token'
+require_relative 'helpers/token.rb'
+require_relative 'helpers/tokendb_parser.rb'
+require 'open-uri'
+
+test = TokenDBParser.new(1)
+test.scrape_tokens
+
+
 
 
 # mega_hash = {}
