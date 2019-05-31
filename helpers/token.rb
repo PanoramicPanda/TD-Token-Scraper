@@ -26,8 +26,8 @@ class Token
     @image_guid = "#{SecureRandom.uuid.gsub('-', '').upcase}#{extension}"
   end
 
-  def download_token_image
-    File.write("images/#{@image_guid}", RestClient.get(@image_full).body, mode: 'wb')
+  def download_token_image(directory)
+    File.write("#{directory}/#{@image_guid}", RestClient.get(@image_full).body, mode: 'wb')
   end
 
   def add_class(td_class)
@@ -50,7 +50,7 @@ class Token
     {
         link: @link,
         image: @image_guid,
-        classes: @classes,
+        helpers: @classes,
         rarity: @rarity,
         slot: @slot,
         years: @years,
