@@ -7,7 +7,9 @@ class TokenDBParser
 
   attr_reader :tokens
 
-  def initialize(max_pages = nil, debugger = false)
+  def initialize(options)
+    debugger = options[:debugger] ? true : false
+    max_pages = options[:max_pages]
     @debugger = TDDebugger.new(debugger)
     @max_pages = max_pages.nil? ? get_max_pages : max_pages
     @all_pages = load_all_pages
