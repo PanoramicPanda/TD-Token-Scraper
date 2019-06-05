@@ -5,63 +5,100 @@ require_relative 'debugger.rb'
 
 class TokenDBParser
 
+  attr_reader :tokens
+
   def initialize(max_pages = nil, debugger = false)
     @debugger = TDDebugger.new(debugger)
     @max_pages = max_pages.nil? ? get_max_pages : max_pages
     @all_pages = load_all_pages
     @tokens = []
+    @current_token
   end
 
-  def save_all_tokens(file)
+  def save_all_tokens(file, image_directory)
     @debugger.start_time
     token_hash = {}
     @tokens.each do |token|
-        token.download_token_image
+        token.download_token_image(image_directory)
         token_hash[token.name] = token.token_hash
     end
     File.write(file, JSON.pretty_generate(token_hash))
     @debugger.debug_message("Saved #{token_hash.size} tokens to #{file}.")
-    @debugger.elapsed_time("Saving Tokens and Images")
+    @debugger.elapsed_time("Saving all Tokens and Images")
   end
 
   def scrape_tokens
     @debugger.start_time
     @debugger.debug_message("Starting to scrape tokens...")
-    @all_pages.each do |page|
+    @all_pages.each_with_index do |page, index|
+      @debugger.debug_message "Scraping page [#{index+1}]..."
       scrape_basic_tokens(page)
     end
-    @debugger.elapsed_time("Scraping Token Data")
+    @debugger.elapsed_time("Scraping Token Data for [#{@tokens.size}] Tokens")
   end
 
   def scrape_basic_tokens(page)
     token_list = page.xpath("//div[contains(@class, 'dir-listing')]")
       raise "NO TOKENS ON PAGE!" if token_list.empty?
       token_list.each do |token_node|
-        token = Token.new
+        @current_token = Token.new
+
+        # Token Link and Name
         token_link = token_node.css('a.dir-title').first
-        token.name = token_link.text
-        token.link = token_link[:href]
+        @current_token.name = token_link.text
+        @current_token.link = token_link[:href]
+
+        # Token Image
+        token_image = token_node.css('img').first[:src]
+        token_image.gsub!('.jpg', '-150x150.jpg') unless token_image =~ /\d*x\d*.jpg$/
+        @current_token.setup_token_image(token_image)
+
+        # Token Information
+        token_node.css('div.dir-tax').each do |detail|
+          detail = detail.text.split(':')
+          case detail[0]
+          when /^Usable by/i
+            @current_token.add_classes(detail[1])
+          when /^Slot/i
+            @current_token.slot = detail[1].strip
+          when /^Rarity/i
+            @current_token.rarity = detail[1].strip
+          when /^Year/i
+            @current_token.add_years(detail[1])
+          end
+        end
+        scrape_detailed_token(@current_token.link)
+        @tokens << @current_token
     end
   end
 
-  # <div class="dir-listing">
-  # <div class="dir-logo"><a href="http://tokendb.com/token/1-amulet-of-armor/" title="+1 Amulet of Armor"><img width="100" height="100" src="http://tokendb.com/wp-content/uploads/2012/04/+1-Amulet-of-Armor-100x100.jpg" class="attachment-token thumb size-token thumb wp-post-image" alt="" srcset="http://tokendb.com/wp-content/uploads/2012/04/+1-Amulet-of-Armor-100x100.jpg 100w, http://tokendb.com/wp-content/uploads/2012/04/+1-Amulet-of-Armor-150x150.jpg 150w, http://tokendb.com/wp-content/uploads/2012/04/+1-Amulet-of-Armor-200x200.jpg 200w, http://tokendb.com/wp-content/uploads/2012/04/+1-Amulet-of-Armor.jpg 226w" sizes="(max-width: 100px) 100vw, 100px"></a></div>
-  # <div class="dir-deets">
-  # <h2><a href="http://tokendb.com/token/1-amulet-of-armor/" class="dir-title rarity-rare ">+1 Amulet of Armor</a></h2>
-  # <div class="dir-tax">Usable by: <a href="http://tokendb.com/usable-by/all/" rel="tag">all</a>, <a href="http://tokendb.com/usable-by/barbarian/" rel="tag">Barbarian</a>, <a href="http://tokendb.com/usable-by/bard/" rel="tag">Bard</a>, <a href="http://tokendb.com/usable-by/cleric/" rel="tag">Cleric</a>, <a href="http://tokendb.com/usable-by/druid/" rel="tag">Druid</a>, <a href="http://tokendb.com/usable-by/dwarf-fighter/" rel="tag">Dwarf Fighter</a>, <a href="http://tokendb.com/usable-by/elf-wizard/" rel="tag">Elf Wizard</a>, <a href="http://tokendb.com/usable-by/fighter/" rel="tag">Fighter</a>, <a href="http://tokendb.com/usable-by/monk/" rel="tag">Monk</a>, <a href="http://tokendb.com/usable-by/paladin/" rel="tag">Paladin</a>, <a href="http://tokendb.com/usable-by/ranger/" rel="tag">Ranger</a>, <a href="http://tokendb.com/usable-by/rogue/" rel="tag">Rogue</a>, <a href="http://tokendb.com/usable-by/wizard/" rel="tag">Wizard</a>
-  # </div>
-  # <div class="dir-tax">Slot: <a href="http://tokendb.com/slot/neck/" rel="tag">Neck</a>
-  # </div>
-  # <div class="dir-tax">Rarity: <a href="http://tokendb.com/rarity/rare/" rel="tag">Rare</a>
-  # </div>
-  # <div class="dir-tax">Year: <a href="http://tokendb.com/pubyear/2003/" rel="tag">2003</a>, <a href="http://tokendb.com/pubyear/2004/" rel="tag">2004</a>, <a href="http://tokendb.com/pubyear/2005/" rel="tag">2005</a>, <a href="http://tokendb.com/pubyear/2006/" rel="tag">2006</a>
-  # </div>
-  # <p>Adds +1 to AC</p>
-  # </div>
-  # </div>
+  def scrape_detailed_token(url)
+    @debugger.debug_message "Scraping token page for [#{@current_token.name}]..."
+    extra_details = open_page(url).css('div.dir-deets-single')
+    extra_details.css('div.dir-tax').each do |detail|
+      detail = detail.text.split(':')
+      case detail[0]
+      when /^Source/i
+        @current_token.add_sources(detail[1])
+      when /^Exchange Program/i
+        s = detail[1].strip.chars[0] == '1' ? '' :'s'
+        exchanges = detail[1].split(" unit#{s},")
+        if exchanges[0] =~ /Reserve Bar/i
+          @current_token.exchange_points = extract_gold_value(extra_details)
+          @current_token.add_exchange('Reserve Bar')
+        elsif exchanges[0] =~ /not exchangeable/i
+          @current_token.exchange_points = '0'
+          @current_token.add_exchange('Not Exchangeable')
+        else
+          @current_token.exchange_points = exchanges[0]
+          @current_token.add_exchanges(exchanges[1])
+        end
+      end
+    end
+  end
 
-  def scrape_detailed_token(page)
-
+  def extract_gold_value(node)
+    node.at('p:contains(" GP")').first.text.split(' GP').first.split(' ').last
   end
 
   private

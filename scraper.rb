@@ -2,18 +2,6 @@ require_relative 'helpers/token.rb'
 require_relative 'helpers/tokendb_parser.rb'
 require 'open-uri'
 
-test = TokenDBParser.new(1)
-test.scrape_tokens
-
-
-
-
-# mega_hash = {}
-# test_array.each_with_index do |token, index|
-#   token.name = token.name + index.to_s
-#   token.setup_token_image('http://tokendb.com/wp-content/uploads/2012/06/Gauntlets-of-Ogre-Power-100x100.jpg')
-#   token.download_token_image
-#   mega_hash[token.name] = token.token_hash
-# end
-#
-# File.write("tokens.json", JSON.pretty_generate(mega_hash))
+tokens = TokenDBParser.new(1, true)
+tokens.scrape_tokens
+tokens.save_all_tokens('../tokens.json', '../images')

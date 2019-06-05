@@ -34,16 +34,44 @@ class Token
     @classes << td_class
   end
 
+  def add_classes(class_list)
+    class_list.split(',').each do |clazz|
+      add_class(clazz.strip.capitalize)
+    end
+    @classes = ['N/A'] if @classes.compact.join.empty?
+  end
+
   def add_year(year)
     @years << year
+  end
+
+  def add_years(year_list)
+    year_list.split(',').each do |year|
+      add_year(year.strip)
+    end
+    @years = ['N/A'] if @years.compact.join.empty?
   end
 
   def add_exchange(exchange)
     @exchanges_to << exchange
   end
 
+  def add_exchanges(exchange_list)
+    exchange_list.split(',').each do |exchange|
+      add_exchange(exchange.strip)
+    end
+    @exchanges_to = ['N/A'] if @exchanges_to.compact.join.empty?
+  end
+
   def add_source(source)
     @sources << source
+  end
+
+  def add_sources(source_list)
+    source_list.split(',').each do |source|
+      add_source(source.strip)
+    end
+    @source = ['N/A'] if @sources.compact.join.empty?
   end
 
   def token_hash
