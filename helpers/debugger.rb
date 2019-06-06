@@ -14,7 +14,7 @@ class TDDebugger
   end
 
   def elapsed_time(task)
-    debug_message("#{task} took #{time_string(Time.now - @start_time)}") if @debug
+    debug_message("#{task} took #{time_string((Time.now - @start_time).to_i)}") if @debug
   end
 
   def time_string(total_time)
