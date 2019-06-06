@@ -106,6 +106,7 @@ class TokenDBParser
   private
 
   def load_all_pages
+    @debugger.debug_message("Loading base pages into Nokogiri...")
     @debugger.start_time
     array = []
     (1..@max_pages).each do |page_number|
