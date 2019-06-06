@@ -122,7 +122,7 @@ class TokenDBParser
   end
 
   def get_max_pages
-    open_page('http://tokendb.com/searchresults/').xpath("//div[contains(@class, 'archive-pagination')]/ul/li[5]/a").first.text.split(' ')[1]
+    open_page('http://tokendb.com/searchresults/').xpath("//div[contains(@class, 'archive-pagination')]/ul/li[5]/a").first.text.split(' ')[1].to_i
   end
 
 end
